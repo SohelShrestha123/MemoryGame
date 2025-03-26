@@ -15,13 +15,12 @@ import java.util.Collections;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    private Integer firstCardIndex=null;
-    private Integer secondCardIndex=null;
-    private Integer firstCard=null;
-    private Integer secondCard=null;
+    private Card firstCard=null;
+    private Card secondCard=null;
     private Integer moves=0;
     private Integer scores=0;
     private List<Button> cardButton;
+    private boolean isBusy;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,13 +29,13 @@ public class MainActivity extends AppCompatActivity {
         GridLayout cardGridLayout=findViewById(R.id.cardGridLayout);
         TextView scoreView=findViewById(R.id.score);
         TextView moveView=findViewById(R.id.move);
-        ArrayList<Integer> arr=new ArrayList<Integer>();
+        ArrayList<Card> cards= new ArrayList<>();
         for(int i=0;i<8;i++){
-           arr.add(i);
-           arr.add(i);
+           cards.add(new Card(i));
+           cards.add(new Card((i)));
 
         }
-        Collections.shuffle(arr);
+        Collections.shuffle(cards);
         cardButton=new ArrayList<>();
 
         for(int i=0;i<16;i++){
@@ -49,66 +48,65 @@ public class MainActivity extends AppCompatActivity {
             button.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                   String value=String.valueOf(arr.get(finalI));
+                    if(isBusy){
+                        return;
+                    }
+                    Card selectCard=cards.get(finalI);
+                    if(selectCard.isMatch()||selectCard.isFlipped()){
+                        return;
+                    }
+
+
+                   String value=String.valueOf(selectCard.getNumber());
                    button.setText(value);
+                   selectCard.setFlipped(true);
 
                    if(firstCard==null) {
-                       firstCardIndex=finalI;
-                       firstCard= arr.get(finalI);
+                       firstCard= cards.get(finalI);
                     }
                    else{
-                       secondCard=arr.get(finalI);
-                       secondCardIndex=finalI;
+                       secondCard=cards.get(finalI);
                        moves++;
+                       isBusy=true;
+
                        new Handler().postDelayed(new Runnable() {
                            @Override
                            public void run() {
-                               if(firstCard==secondCard){
+                               if(firstCard.getNumber()==secondCard.getNumber()){
                                    scores++;
+                                   firstCard.setMatch(true);
+                                   secondCard.setMatch(true);
+                                   scoreView.setText("Score:"+String.valueOf(scores));
+                                   moveView.setText("Move"+String.valueOf(moves));
                                }
 
                                else{
-                                   if(firstCardIndex!=null) {
-                                       Button prevButton = cardButton.get(firstCardIndex);
-                                       prevButton.setText("?");
-                                       button.setText("?");
-                                   }
+                                   int firstCardIndex=cards.indexOf(firstCard);
+                                   Button prevButton = cardButton.get(firstCardIndex);
+                                   prevButton.setText("?");
+                                   button.setText("?");
+                                   firstCard.setFlipped(false);
+                                   secondCard.setFlipped(false);
                                }
                            }
                        },3000);
 
-                       if(firstCard==secondCard){
-                           scores++;
-                       }
-                       else{
-                           new Handler().postDelayed(new Runnable() {
-                               @Override
-                               public void run() {
-                                   if(firstCardIndex!=null) {
-                                       Button prevButton = cardButton.get(firstCardIndex);
-                                       prevButton.setText("?");
-                                       button.setText("?");
-                                   }
-                                   
-                                   firstCard=null;
-                                   secondCard=null;
-                                   firstCardIndex=null;
-                                   secondCardIndex=null;
-                               }
-                           },1000);
 
+
+                          isBusy=false;
+                          firstCard=null;
+                          secondCard=null;
 
 
                        }
 
 
 
-                       scoreView.setText("Score:"+String.valueOf(scores));
-                       moveView.setText("Move"+String.valueOf(moves));
+
                    }
 
 
-                }
+
             });
             cardGridLayout.addView(button);
         }
